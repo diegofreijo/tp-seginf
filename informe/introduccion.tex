@@ -1,0 +1,27 @@
+\section{Introducci'on}
+
+\subsection{Definiciones}
+
+La Virtualización consiste en la abstracción de recursos de una computadora. Es la implementación de una máquina virtual (VM).
+Una máquina virtual, a su vez, es la implementación en software de una máquina que se comporta como una máquina física. Una característica esencial de una VM es que el software que corre dentro de ella (llamado guest) se encuentra limitado a los recursos y abstracciones proveídos por la VM, no debería poder escaparse de su mundo virtual.
+Existen dos grandes categorías de máquina virtual: de sistema y de proceso.
+VM de Sistema
+
+Una VM de Sistema provee una plataforma de sistema completa que permite la ejecución de un sistema operativo completo. Las VM de Sistema poseen una capa de software encargada de la virtualización, llamado Hypervisor o Virtual Machine Monitor. Un hypervisor puede correr directamente sobre hardware (tipo 1 o VM nativa) o sobre un sistema operativo (tipo 2 o VM "hosteada").
+Una VM de sistema posee las siguientes ventajas:
+Múltiples entornos de SO pueden coexistir en el mismo hardware, en completa isolación entre ellos.
+La VM puede proveer un set de instrucciones diferente al del hardware.
+Costos de mantenimiento reducidos, alta disponibilidad y la capacidad de recupero ante desastres.
+
+Existen diferentes subcategorías de VM de sistema: virtualización completa (llamada simplemente "Virtualización" con frecuencia), virtualización asistida por hardware, virtualización parcial, paravirtualización, virtualización a nivel de sistema operativo. A continuación se detallarán algunas de estas categorías.
+Historia
+
+Las máquinas virtuales fueron desarrolladas en primera instancia por IBM en la década de 1960, como una manera de dividir lógicamente el hardware mainframe. De esta manera, se conseguía que los mainframes fueron "multiproceso", corriendo varias aplicaciones al mismo tiempo. En esa época las mainframes eran un recurso muy caro, entonces eran diseñadas para ser particionadas y, de esta manera, nivelar mejor la inversión. La virtualización fue abandonada en los 80 y los 90 cuando aplicaciones cliente-servidor y máquinas baratas con arquitectura x86 establecieron el modelo de computación distribuida. Hoy en día, las computadoras basadas en x86 están sufriendo el mismo problema de subutilización y rigidez que tenían las mainframes en 1960, y entonces el concepto de virtualización está volviendo a ser usado.
+
+La primera apuesta realizada por IBM fue el sistema operativo CP-40, creado para la mainframe System/360. El sistema fue reemplazado rápidamente por el sistema operativo CP-67. En sus inicios, la virtualización fue pensada como un proyecto interno de investigación en IBM, y no como un producto. El hypervisor estuvo disponible comercialmente en 1972.
+Fuentes
+
+http://www.virtualization.info/
+http://en.wikipedia.org
+Gerald J. Popek and Robert P. Goldberg (1974). "Formal Requirements for Virtualizable Third Generation Architectures". Communications of the ACM 17 (7)
+http://www.vmware.com
