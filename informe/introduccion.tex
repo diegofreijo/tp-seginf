@@ -2,26 +2,62 @@
 
 \subsection{Definiciones}
 
-La Virtualización consiste en la abstracción de recursos de una computadora. Es la implementación de una máquina virtual (VM).
-Una máquina virtual, a su vez, es la implementación en software de una máquina que se comporta como una máquina física. Una característica esencial de una VM es que el software que corre dentro de ella (llamado guest) se encuentra limitado a los recursos y abstracciones proveídos por la VM, no debería poder escaparse de su mundo virtual.
-Existen dos grandes categorías de máquina virtual: de sistema y de proceso.
-VM de Sistema
+La Virtualizaci'on consiste en la abstracci'on de recursos de una computadora. Es la implementaci'on de una m'aquina virtual (VM).
+Una m'aquina virtual, a su vez, es la implementaci'on en software de una m'aquina que se comporta como una m'aquina f'isica. Una caracter'istica esencial de una VM es que el software que corre dentro de ella (llamado guest) se encuentra limitado a los recursos y abstracciones prove'idos por la VM, no deber'ia poder escaparse de su mundo virtual.
+Existen dos grandes categor'ias de m'aquina virtual: de sistema y de proceso.
 
-Una VM de Sistema provee una plataforma de sistema completa que permite la ejecución de un sistema operativo completo. Las VM de Sistema poseen una capa de software encargada de la virtualización, llamado Hypervisor o Virtual Machine Monitor. Un hypervisor puede correr directamente sobre hardware (tipo 1 o VM nativa) o sobre un sistema operativo (tipo 2 o VM "hosteada").
+\subsection{VM de Sistema}
+
+Una VM de Sistema provee una plataforma de sistema completa que permite la ejecuci'on de un sistema operativo completo. Las VM de Sistema poseen una capa de software encargada de la virtualizaci'on, llamado Hypervisor o Virtual Machine Monitor. Un hypervisor puede correr directamente sobre hardware (tipo 1 o VM nativa) o sobre un sistema operativo (tipo 2 o VM 'hosteada'). El 'virtual machine manager' (VMM) es el proceso encargado de la virtualizaci'on de una m'aquina virtual, y el hypervisor es, a su vez, el encargado de administrar los VMMs en ejecuci'on.
 Una VM de sistema posee las siguientes ventajas:
-Múltiples entornos de SO pueden coexistir en el mismo hardware, en completa isolación entre ellos.
-La VM puede proveer un set de instrucciones diferente al del hardware.
-Costos de mantenimiento reducidos, alta disponibilidad y la capacidad de recupero ante desastres.
+\begin{itemize}
+	\item M'ultiples entornos de SO pueden coexistir en el mismo hardware, en completa isolaci'on entre ellos.
+	\item La VM puede proveer un set de instrucciones diferente al del hardware.
+	\item Costos de mantenimiento reducidos, alta disponibilidad y la capacidad de recupero ante desastres.
+\end{itemize}
 
-Existen diferentes subcategorías de VM de sistema: virtualización completa (llamada simplemente "Virtualización" con frecuencia), virtualización asistida por hardware, virtualización parcial, paravirtualización, virtualización a nivel de sistema operativo. A continuación se detallarán algunas de estas categorías.
-Historia
+Existen diferentes subcategor'ias de VM de sistema: virtualizaci'on completa (llamada simplemente 'Virtualizaci'on' con frecuencia), virtualizaci'on asistida por hardware, virtualizaci'on parcial, paravirtualizaci'on, virtualizaci'on a nivel de sistema operativo. A continuaci'on se detallar'an algunas de estas subcategor'ias.
 
-Las máquinas virtuales fueron desarrolladas en primera instancia por IBM en la década de 1960, como una manera de dividir lógicamente el hardware mainframe. De esta manera, se conseguía que los mainframes fueron "multiproceso", corriendo varias aplicaciones al mismo tiempo. En esa época las mainframes eran un recurso muy caro, entonces eran diseñadas para ser particionadas y, de esta manera, nivelar mejor la inversión. La virtualización fue abandonada en los 80 y los 90 cuando aplicaciones cliente-servidor y máquinas baratas con arquitectura x86 establecieron el modelo de computación distribuida. Hoy en día, las computadoras basadas en x86 están sufriendo el mismo problema de subutilización y rigidez que tenían las mainframes en 1960, y entonces el concepto de virtualización está volviendo a ser usado.
+\subsubsection{Virtualizaci'on (completa)}
 
-La primera apuesta realizada por IBM fue el sistema operativo CP-40, creado para la mainframe System/360. El sistema fue reemplazado rápidamente por el sistema operativo CP-67. En sus inicios, la virtualización fue pensada como un proyecto interno de investigación en IBM, y no como un producto. El hypervisor estuvo disponible comercialmente en 1972.
+La virtualizaci'on completa es la t'ecnica que ofrece un tipo de ambiente de m'aquina virtual, uno que es una simulaci'on completa del hardware donde corre. En este ambiente, cualquier aplicaci'on capaz de ejecutar sobre el hardware virtualizado puede ejecutarse. En especial, sistemas operativos.
+
+Un problema central en virtualizaci'on completa es la intercepci'on y simulaci'on de las instrucciones privilegiadas (por ejemplo, instrucciones de I/O). El efecto de cada operaci'on dentro de una VM debe ser mantenido dentro de esa VM (operaciones virtuales no deber'ian poder alterar el estado de otra VM, del hypervisor o del hardware). Algunas instrucciones pueden ser ejecutadas directamente por el hardware, pues sus efectos se encuentran controlados por el hypervisor, por ejemplo, posiciones de memoria y registros aritm�ticos. Sin embargo, hay instrucciones que se escapar'ian del entorno virtual, y que entonces no debe estar permitido ejecutar directamente, tienen que ser capturadas y simuladas.
+
+\imagen{full_virtualization.png}{14}{Comparaci'on entre un entorno no virtualizado (izquierda) y un entorno con virtualizac'on completa (derecha)}
+
+\subsubsection{Paravirtualizaci'on}
+
+En este caso, se modifica el kernel del sistema operativo guest (o sea, el que es virtualizado), principalmente algunos drivers. A diferencia de en virtualizaci'on completa, el guest sabe que est'a en un entorno virtual, pues el kernel fue modificado para comunicarse directamente con el hypervisor. El objetivo principal es mejorar la performance en relaci'on con virtualizaci'on completa, modificando las llamadas cr'iticas para que, en vez de tener que pasar por el overhead de traducir las instrucciones desde el entorno f'isico al virtual, las llamadas se hagan directamente al hypervisor. La paravirtualizaci'on exige que el sistema operativo est'e expl'icitamente porteado para la nueva API, un sistema operativo convencional no puede ser montado directamente sobre un hypervisor paravirtualizado. El hypervisor de Xen es el ejemplo m'as conocido de paravirtualizaci'on.
+
+\imagen{paravirtualization.png}{14}{En un entorno paravirtualizado, el sistema operativo tiene modificaciones para comunicarse directamente con el hypervisor}
+
+\subsection{VM de Proceso}
+
+Una VM de proceso corre como un proceso normal dentro del sistema operativo, y soporta un 'unico proceso. La VM es creada cuando el proceso a hostear es iniciado, y es destruida cuando el mismo termina. El objetivo es proveer un entorno de programaci'on independiente de la plataforma, abstrayendo detalles de hardware o SO. Las VMs de proceso proveen un alto nivel de abstracci'on, y son implementadas con un int'erprete, aunque pueden llegar a tener una performance comparada a un lenguage de programaci'on compilado con el uso de compilaci'on 'just in time'.
+
+Ventajas de VM de proceso:
+\begin{itemize}
+\item Permite a las aplicaciones correr en entornos diferentes a los cuales fue pensado la aplicaci'on.
+\item Puede proteger al sistema operativo u otras aplicaciones de c'odigo inseguro de la aplicaci'on virtualizada, pues cualquier problema no deber'ia expandirse por fuera de la VM.
+\item Permite implementar el principio de seguridad de menor privilegio, pues el usuario final no necesitar'ia ser administrador para correr la aplicaci'on virtualizada.
+\item Permite a las aplicaciones ser copiadas a un medio portable, y luego importadas sin la necesidad de ser instaladas en la otra m'aquina.
+\end{itemize}
+
+\subsubsection{Emulador}
+
+Los emuladores son la subcategor�a principal dentro de las VMs de proceso.
+
+\subsection{Historia}
+
+Las m'aquinas virtuales fueron desarrolladas en primera instancia por IBM en la d'ecada de 1960, como una manera de dividir l'ogicamente el hardware mainframe. De esta manera, se consegu'ia que los mainframes fueron 'multiproceso', corriendo varias aplicaciones al mismo tiempo. En esa 'epoca las mainframes eran un recurso muy caro, entonces eran dise~nadas para ser particionadas y, de esta manera, nivelar mejor la inversi'on. La virtualizaci'on fue abandonada en los 80 y los 90 cuando aplicaciones cliente-servidor y m'aquinas baratas con arquitectura x86 establecieron el modelo de computaci'on distribuida. Hoy en d'ia, las computadoras basadas en x86 est'an sufriendo el mismo problema de subutilizaci'on y rigidez que ten'ian las mainframes en 1960, y entonces el concepto de virtualizaci'on est'a volviendo a ser usado.
+
+La primera apuesta realizada por IBM fue el sistema operativo CP-40, creado para la mainframe System/360. El sistema fue reemplazado r'apidamente por el sistema operativo CP-67. En sus inicios, la virtualizaci'on fue pensada como un proyecto interno de investigaci'on en IBM, y no como un producto. El hypervisor estuvo disponible comercialmente en 1972.
+
 Fuentes
 
 http://www.virtualization.info/
 http://en.wikipedia.org
 Gerald J. Popek and Robert P. Goldberg (1974). "Formal Requirements for Virtualizable Third Generation Architectures". Communications of the ACM 17 (7)
 http://www.vmware.com
+http://www.xen.org/
