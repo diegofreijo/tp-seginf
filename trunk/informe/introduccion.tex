@@ -22,7 +22,7 @@ Existen diferentes subcategor'ias de VM de sistema: virtualizaci'on completa (ll
 
 La virtualizaci'on completa es la t'ecnica que ofrece un tipo de ambiente de m'aquina virtual, uno que es una simulaci'on completa del hardware donde corre. En este ambiente, cualquier aplicaci'on capaz de ejecutar sobre el hardware virtualizado puede ejecutarse. En especial, sistemas operativos.
 
-Un problema central en virtualizaci'on completa es la intercepci'on y simulaci'on de las instrucciones privilegiadas (por ejemplo, instrucciones de I/O). El efecto de cada operaci'on dentro de una VM debe ser mantenido dentro de esa VM (operaciones virtuales no deber'ian poder alterar el estado de otra VM, del hypervisor o del hardware). Algunas instrucciones pueden ser ejecutadas directamente por el hardware, pues sus efectos se encuentran controlados por el hypervisor, por ejemplo, posiciones de memoria y registros aritméticos. Sin embargo, hay instrucciones que se escapar'ian del entorno virtual, y que entonces no debe estar permitido ejecutar directamente, tienen que ser capturadas y simuladas.
+Un problema central en virtualizaci'on completa es la intercepci'on y simulaci'on de las instrucciones privilegiadas (por ejemplo, instrucciones de I/O). El efecto de cada operaci'on dentro de una VM debe ser mantenido dentro de esa VM (operaciones virtuales no deber'ian poder alterar el estado de otra VM, del hypervisor o del hardware). Algunas instrucciones pueden ser ejecutadas directamente por el hardware, pues sus efectos se encuentran controlados por el hypervisor, por ejemplo, posiciones de memoria y registros aritméticos. Sin embargo, hay instrucciones que se escapar'ian del entorno virtual, y que entonces no debe estar permitido ejecutar directamente, tienen que ser capturadas y simuladas. Ejemplos de programas que ofrecen virtualizaci'on completa son VMware Workstation y VirtualBox.
 
 \imagen{full_virtualization.png}{14}{Comparaci'on entre un entorno no virtualizado (izquierda) y un entorno con virtualizac'on completa (derecha)}
 
@@ -46,7 +46,40 @@ Ventajas de VM de proceso:
 
 \subsubsection{Emulador}
 
-Los emuladores son la subcategor'ia principal dentro de las VMs de proceso.
+Los emuladores son la subcategor'ia principal dentro de las VMs de proceso. Su objetivo es permitir ejecutar aplicaciones de una arquitectura dentro de otra. Un ejemplo es DOSBox, cuya funci'on es emular la l'inea de comandos de MS-DOS.
+
+Otros ejemplos de emuladores conocidos: La m'aquina virtual de java, QEMU, Bochs.
+
+\imagen{Java-jvm.png}{14}{Diagrama de c'omo la VM de java encapsula las diferentes arquitecturas y provee un entorno com'un para el bytecode.}
+
+\subsection{Soporte de hardware para virtualizaci'on}
+
+\subsubsection{Requerimientos para virtualizaci'on de Popek y Goldberg}
+
+En 1974, Gerald J. Popek, de la universidad de California, y Robert P. Goldberg, de la universidad de Harvard y de Honeywell, publican un art'iculo donde especifican los requisitos que debe cumplir una arquitectura de hardware para soportar eficientemente la virtualizaci'on.
+
+Popek y Goldberg introducen una clasificaci'on de las instrucciones de la arquitectura en tres categor'ias:
+\begin{enumerate}
+	\item Instrucciones sensibles de control: Son aqu'ellas que cambian la configuraci'on de recursos del sistema.
+	\item Instrucciones sensibles de comportamiento: Son aqu'ellas cuyo resultado depende de la configuraci'on de los recursos.
+	\item Instrucciones privilegiadas: Son aqu'ellas que, en modo usuario, resultan en una interrupci'on, con la consiguiente toma de control por parte del sistema operativo, y, en modo sistema, no resultan en una interrupci'on.
+\end{enumerate}
+
+El teorema de Popek y Goldberg dice lo siguiente:
+
+Dada una arquitectura, un hypervisor puede ser implementado en ella si el conjunto de instrucciones sensibles (o sea, las instrucciones de tipo 1 o 2) está incluido en el conjunto de instrucciones privilegiadas (las del tipo 3).
+
+Si se cumple el teorema, las instrucciones que pueden afectar el correcto funcionamiento del hypervisor (las instrucciones sensibles) siempre resultan en interrupci'on (pues tambi'en son instrucciones privilegiadas), por lo que el hypervisor toma el control. De esta manera, nos aseguramos que el hypervisor tenga el control de los recursos de la VM.
+
+Popek y Goldberg tambi'en dan un teorema para el concepto de Recursivamente Virtualizable, pero no vamos a hablar de ese concepto en este trabajo.
+
+\subsubsection{Soporte de hardware para virtualizaci'on en la arquitectura x86}
+
+En sus inicios, la arquitectura x86 no cumpl'ia con el teorema de Popek y Goldberg, por lo que era muy complicado para los programadores implementar software de virtualizaci'on para la arquitectura que no fuera muy ineficiente.
+
+El set de instrucciones de la arquitectura x86, sin extensiones, contiene 17 instrucciones sensibles que no son privilegiadas, no cumpliendo, de esta forma con el teorema.
+
+Mucho tiempo despu'es, tanto Intel como AMD crean, de manera independiente, extensiones a la arquitectura x86 que cumplen con el teorema de Popek y Goldberg. Intel, en 2005, desarolla `Intel VT-x', su extensi'on para virtualizaci'on. AMD, en 2006, realiza lo mismo, llamando a su extensi'on `AMD-V'. Ambas implementaciones difieren en ciertos aspectos, pero logran el mismo objetivo.
 
 \subsection{Historia}
 
@@ -58,6 +91,6 @@ Fuentes
 
 http://www.virtualization.info/
 http://en.wikipedia.org
-Gerald J. Popek and Robert P. Goldberg (1974). "Formal Requirements for Virtualizable Third Generation Architectures". Communications of the ACM 17 (7)
+Gerald J. Popek and Robert P. Goldberg (1974). "Formal Requirements for Virtualizable Third Generation Architectures"
 http://www.vmware.com
 http://www.xen.org/
