@@ -1,1 +1,50 @@
 \section{Ataques}
+
+La virtualizaci'on caus'o un gran impacto al brindar un nuevo paradigma sobre la forma en la cual interactuamos con equipos, realizamos pruebas, administramos servidores, entre otros. Y para la segurdad inform'atica representa un nuevo conjunto de herramientas para el an'alisis de programas maliciosos y disminuir la exposici'on de sistemas reales.
+
+Pero para lograrlo se necesita un atributo importante: la \negrita{isolaci'on} de las m'aquinas virtuales del mundo exterior, f'isico y real. Es decir, cualquier proceso (incluyendo al sistema operativo) corriendo en una m'aquina virtual no deber'ia poder saber que lo est'a. Menos a'un deber'ia poder interactual con el sistema operativo host o las dem'as m'aquinas virtuales. 'Esta cualidad no siempre es conseguida, y existen varios vectores de ataque disponibles para que una aplicaci'on maliciosa logre romper la isolaci'on.
+
+A continuaci'on mostraremos los puntos clave donde se puede atacar un ambiente virtualizado y formas con las cuales prevenir de ser vulnerados por 'estos. Cabe aclarar que algunos de los puntos nombrados pueden ser considerados como caracter'isticas favorables de los ambientes virtualizados. Pero tambi'en pueden ser de ayuda para un atacante.
+
+Los ataques conseguidos en la pr'actica utilizando las t'ecnicas aqu'i presentadas ser'an explicados en las siguientes secci'ones.
+
+\subsection{Detecci'on de ambiente virtualizado}
+
+El objetivo de una m'aquina virtual es proveerle al usuario un equipo que parece real pero en realidad no lo es. 'Esto aplica principalmente para las aplicaciones que ejecute. Por eso se espera que cada una de 'estas se comporten dentro de una VM de la misma forma que se comportar'ia dentro de de un equipo normal. 
+
+Consiguiendo tal objetivo uno puede analizar el consumo de recursos de la aplicaci'on y las entradas y salidas que realiza tales como conexiones al exterior, accesos a archivos, estructuras de datos del sistema (como el registro en Windows), etc con total certeza que los datos tomados hubiesen sido similares en ambientes reales. Tambi'en uno podr'ia ejecutar programas potencialmente maliciosos en entornos seguros (m'aquinas virtuales comport'andose como sandboxes) y ver si realmente lo son; o auditar los da–os que realiza si se sabe que efectivamente lo es y encontrar un m'etodo de protecci'on adecuado.
+
+Especialmente en el caso de los programas maliciosos es cuando se hace indispensable la necesidad de no revelar que se encuentra en un equipo virtualizado. De no lograrlo, 'este podr'ia comportarse de forma diferente (no maliciosa) ya que sospecha que est'a siendo analizado.
+
+Lamentablemente los equipos con vitualizaci'on completa resultan p'oco 'utiles en la pr'actica debido a la gran ineficiencia de recursos que se genera y es por 'esto que la mayor'ia de las soluciones de virtualizaci'on utilizan paravirtualizaci'on. 'Este enfoque presenta modificaciones al kernell del sistema operativo guest con lo cual ya se compromete desde el inicio la transparencia de la m'aquina virtual. Por su parte, el hypervisor y las VMM no dejan de ser programas y como tales pueden contener vunerabilidades a la hora de esconder su verdadera naturaleza a los procesos corriendo dentro. Adem'as un ambiente virtualizado puede poseer una mala configuraci'on por parte de sus administradores que vulneren al sistema. As'i los creadores de c'odigos maliciosos obtienen herramientas para detectar ambientes virtualizados. Las m'as importantes se explicar'an en detalle en la secci'on correspondiente.
+
+
+\subsection{VM Escape}
+
+Como ya se dijo, una aplicaci'on maliciosa posee ciertos medios para detectar ambientes virtualizados y comportarse de manera diferente si sospecha que est'a siendo analizado. Pero tambi'en puede aprovecharse a'un mas de las vulnerabilidades encontradas y causar da–os en el mismo ambiente.
+
+'Estos ataques se llaman VM Escape y por lo general consisten en explotar alguna vulnerabilidad en el hypervisor (principalmente, buffer overflow) y conseguir que 'ejecute c'odigo arbitrario. Como 'este corre en el sistema operativo host, el c'odigo maliciosos afectar'a al sistema operativo host y se ejecutar'a con los privilegios del hypervisor (por lo general son elevados debido a las tareas de bajo nivel que requiere efectuar en el sistema). 
+
+As'i se compromete al equipo f'isico y a todas las demas m'aquinas virtuales ejecutando en 'el ya que le hypervisor posee control absoluto sobre 'estas. Es decir, un programa malicioso ejecutado en una m'aquina podr'ia apropiarse de todo el sistema. 
+
+\subsection{Comunicaci'on entre VMs y entre guest y host}
+
+Dada la necesidad de isolaci'on ya explicada anteriormente, una m'aquina virtual (es decir, ningun proceso ejecut'andose en ella) no deber'ia poder comunicarse con las dem'as corriendo en el mismo equipo f'isico o con el host. Pero as'i como se dijo antes el hypervisor puede poseer vulnerabilidades que comprometan 'este requerimiento y brinden puertas de acceso a los programas para que monitoreen y alteren la informaci'on de ellos.
+
+Una forma son los medios comunes brindados adrede por el software de virtualizaci'on utilizado. Los m'as comunes son
+
+\begin{description}
+
+\item[Clipboard] Algunos productos de virtualizaci'on permiten que el host y los guests compartan el clipboard (o portapapaeles) pudiendo cada uno de ellos leer y modificar sus contenidos. En algunos casos la informaci'on que se aloje en 'este puede ser confidencial, como una contrase–a, y no deber'ia ser compartida con los dem'as equipos. Adem'as, al ser un medio donde se puede alojar cualquier tipo de informaci'on, se podr'ia llegar a utilizar como covert channel para facilitar un ataque desde una m'aquina virtual a otra (o al host). 
+
+\end{description}
+
+Virtual machines can be used to serve multiple needs:
+
+? Sharing a physical computer between multiple organizations or companies
+ ? Using a single physical computer for low security and high security applications 
+ ? Consolidation of services onto fewer physical computers 
+ ? Providing a common hardware platform to host multiple operating systems
+ 
+ The first three applications assume isolation exists between the virtual machines. In the first case, the companies should be able to assume that applications on the other VMs cannot access theirs. In the second and third cases, a break-in on one virtual machine should not provide access to the others. However, in the fourth case the goal of the virtualization may be to facilitate communication between multiple guests and the host (see section 6.1.2).Although the majority of security concerns associated with virtual machines are similar, if not identical, to those on physical platforms, VMs do have unique potential weaknesses. Some of these are identified below:? Technologies like a shared clipboard allow data to be transferred between VMs and the host. This useful functionality can also provide a gateway for transferring data between cooperating malicious programs in VMs of different security realms or to exfiltrate data to/from the host operating system.? In one VM technology, the operating system kernel that provides the VM layer has the ability to log keystrokes and screen updates passed across virtual terminals in the virtual machine. The
+keystrokes and screen updates are logged to files out on the host, allowing monitoring of even encrypted terminal connections inside the VM.? Some VMs do not focus on isolation at all, giving the guests unfettered access of the host's resources, such as the file system. Such solutions tend to focus on running applications designed for one operating system on another operating system, and eschew the isolation that many VM users expect. VM users with significant security and isolation needs should discuss with their vendor to determine a proper approach toward isolation.
