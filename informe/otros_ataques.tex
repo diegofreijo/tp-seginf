@@ -1,0 +1,13 @@
+\section{Otros ataques}
+
+Las soluciones en virtualizaci'on ofrecen comodidades inexistentes hasta el momento de su creaci'on a los administradores y usuarios finales. Pero desde el punto de vista de la seguridad tambi'en ofrece nuevas herramientas para comprometer sistemas. En este apartado presentaremos los m'as conocidos a nivel mundial hasta el d'ia de la fecha. 
+
+\subsection{Blue Pill}
+
+Joanna Rutkowska, la misma creadora de la Red Pill que fue explicada anteriormente, descubri'o la forma de hacer un rootkit aprovechando los conceptos de virtualizaci'on. 'Este consiste en transformar un equipo virtual en una m'aquina virtual, transformando al programa malicioso en el hypervisor del sistema. Como ya se dijo el hypervisor de una m'aquina virtual posee control absoluto de ella, pudiendo agregarle y quitarle recursos, monitorear su memoria y medios de entrada/salida, etc. Al lograr que un virus sea hypervisor de una m'aquina se logra que 'este posea control absoluto de la misma. 
+
+El ataque utiliza las tecnolog'ias de virtualizaci'on presentes en los procesadores. En el caso de AMD ser'ia AMD-V y para Intel, Intel VT-x. Al utilizar virtualizaci'on por hardware no existe la necesidad de generar dispositivos virtuales que pueden alarmar al sistema opertaivo, por lo que las t'ecnicas de deteccion de ambiente virtual explicadas anteriormente son in'utiles, como por ejemplo la misma Red Pill.
+ 
+Anteriormente un investigador de Microsoft hab'ia desarrollado un rootkit similar, el SubVirt rootkit, pero no permi'tia persistencia ya que no se alojaba en un dispositivo no vo'atil. Tampoco permit'ia instalarse {\it en caliente} y aumentaba la visibildad del mismo por el uso de dispositivos virtuales\footnote{M'as informaci'on sobre SubVirt: \url{http://www.eecs.umich.edu/virtual/papers/king06.pdf}}.
+ 
+Se puede encontrar m'as informaci'on
