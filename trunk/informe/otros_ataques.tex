@@ -4,10 +4,60 @@ Las soluciones en virtualizaci'on ofrecen comodidades inexistentes hasta el mome
 
 \subsection{Blue Pill}
 
-Joanna Rutkowska, la misma creadora de la Red Pill que fue explicada anteriormente, descubri'o la forma de hacer un rootkit aprovechando los conceptos de virtualizaci'on. 'Este consiste en transformar un equipo virtual en una m'aquina virtual, transformando al programa malicioso en el hypervisor del sistema. Como ya se dijo el hypervisor de una m'aquina virtual posee control absoluto de ella, pudiendo agregarle y quitarle recursos, monitorear su memoria y medios de entrada/salida, etc. Al lograr que un virus sea hypervisor de una m'aquina se logra que 'este posea control absoluto de la misma. 
+Joanna Rutkowska, la creadora de la Red Pill que fue explicada anteriormente, descubri'o la forma de hacer un rootkit aprovechando los conceptos de virtualizaci'on. 'Este consiste en transformar un equipo virtual en una m'aquina virtual, transformando al programa malicioso en el hypervisor del sistema. Como ya se dijo el hypervisor de una m'aquina virtual posee control absoluto de ella, pudiendo agregarle y quitarle recursos, monitorear su memoria y medios de entrada/salida, etc. Al lograr que un virus sea hypervisor de una m'aquina se logra que 'este posea control absoluto de la misma. 
 
-El ataque utiliza las tecnolog'ias de virtualizaci'on presentes en los procesadores. En el caso de AMD ser'ia AMD-V y para Intel, Intel VT-x. Al utilizar virtualizaci'on por hardware no existe la necesidad de generar dispositivos virtuales que pueden alarmar al sistema opertaivo, por lo que las t'ecnicas de deteccion de ambiente virtual explicadas anteriormente son in'utiles, como por ejemplo la misma Red Pill.
+El ataque utiliza las tecnolog'ias de virtualizaci'on presentes en los procesadores de 64 bits. En el caso de AMD ser'ia AMD-V y para Intel, Intel VT-x. Al utilizar virtualizaci'on con hardware x64 varias t'ecnicas de detecci'on de virtualizaci'on basadas en instrucciones sensibles quedan in'utiles, como la misma Red Pill.
+
+
+\subsubsection{Idea}
+
+La versi'on original Blue Pill se basa en el set de instrucciones de AMD y Windows Vista x64, pero luego se extendi'o a Intel y, seg'un la autora, se podr'ia extender a cualquier otro sistema operativo basado en Unix y BSD. Su idea es meterse en el kernell del sistema operativo a travez de alg'un driver vulnerable\footnote{La autora asegura que de no encontrarse un driver vulnerable se podria generar uno propio, firmarlo por 250 d'olares para que el sistema operativo lo reconozca y utilizarlo como puerta de acceso}. Se utiliza la vulnerabilidad encontrada para inyectarle el shellcode que permita la ejecucion del hypervisor y el pasaje a modo virtualizado de todo el sistema. Para lograrlo, se fuerza al sistema operativo a paginar la memoria del driver consumiendo toda la que se pueda.
+
+Luego se utilizan las extensiones de virtualizaci'on del procesador para continuar la ejecuci'on del sistema operativo con 'estas. En el caso de AMD, el set es SVM\footnote{AMD64 Architecture Programmer's Manual Vol. 2: System Programming: \url{http://www.amd.com/us-en/assets/content_type/white_papers_and_tech_docs/24593.pdf}}
+
+\subsubsection{Posibles soluciones}
+
+Existen ideas de posibles protecciones contra Blue Pill, dif'iciles de implementar en la pr'actica por temas de rendimiento
+
+\begin{description}
+
+\item[Inhabilitar acceso directo al disco r'igido] Permitir'ia que no se pueda modificar la memoria del driver al paginarse, pero podr'ia afectar a la compatibilidad con varias aplicaciones como antivirus, recuperadores de archivos borrados o bases de datos.
+
+\item[Encriptar el pagefile] Evitaria la modificaci'on de la memoria paginada a cualquier aplicaci'on que no sea el sistema operativo, pero generar'ia un fuerte impacto en el rendimiento de todo el sistema.
+
+\item[Deshabilitar paginacion de la memoria del kernell] Gracias a la segmentaci'on de memoria, no se podr'ia modificar los drivers. Pero los efectos son obvios: memoria f'isica que no se pagina es memoria f'isica que no puede ser utilizada por otros drivers. 
+
+\end{description}
+
+\subsubsection{SubVirt}
  
-Anteriormente un investigador de Microsoft hab'ia desarrollado un rootkit similar, el SubVirt rootkit, pero no permi'tia persistencia ya que no se alojaba en un dispositivo no vo'atil. Tampoco permit'ia instalarse {\it en caliente} y aumentaba la visibildad del mismo por el uso de dispositivos virtuales\footnote{M'as informaci'on sobre SubVirt: \url{http://www.eecs.umich.edu/virtual/papers/king06.pdf}}.
- 
-Se puede encontrar m'as informaci'on
+Anteriormente un investigador de Microsoft hab'ia desarrollado un rootkit similar, el SubVirt rootkit. Sin embargo, era una versi'on mucho m'as limitada que Blue Pill. Las mayores desventajas son:
+
+\begin{itemize}
+
+\item SubVIrt agrega informaci'on al disco r'igido para conseguir persistencia, principalmente modificaciones a productos de virtualizaci'on conocidos como VMWare y VirtualPC. 'Esto agrega mayor detecci'on, incluso cuando el equipo se encuentra apagado. Notar que Blue Pill no es persistente por lo que no resiste un reinicio del sistema, pero la autora dice que tampoco es algo buscado por el rootkit ya que los servidores son reiniciados raramente y ademas el hypervisor puede atrapar interrupciones de reset, fingiendo un reinicio del sistema operativo pero no del equipo.
+
+\item SubVirt se implementa en hardware x86 y permite mayor detecci'on mediante los mecanismos ya comentados como la misma Red Pill. El set de instrucciones no privilegiadas que lo permiten no se encuentran en x64 por lo que no afectan a Blue Pill. 
+
+\item Al basarse en productos de virtualizaci'on como VMWare y VirtualPC, SubVirt genera dispositivos virtuales diferentes a los del equipo real, aumentando a'un mas su detecci'on. 
+
+\end{itemize}
+
+M'as informaci'on sobre SubVirt: \url{http://www.eecs.umich.edu/virtual/papers/king06.pdf}.
+
+
+
+\subsubsection{M'as informaci'on}
+
+Para m'as informaci'on sobre Blue Pill:
+
+\begin{itemize}
+
+\item Sitio oficial: \url{http://bluepillproject.org/}
+
+\item ``Introducing Blue Pill'', Blog de Joanna Rutkowska: \url{http://theinvisiblethings.blogspot.com/2006/06/introducing-blue-pill.html}
+
+\item Presentaci'on en Black Hat 2006: \url{http://blackhat.com/presentations/bh-usa-06/BH-US-06-Rutkowska.pdf} 
+
+\end{itemize}
+
