@@ -29,6 +29,19 @@ Existen ideas de posibles protecciones contra Blue Pill, dif'iciles de implement
 
 \end{description}
 
+
+\subsubsection{Indetecci'on}
+
+Como ya se habl'o, Blue Pill no es afectado por mecanismos de detecci'on de m'aquinas virtuales basados en instrucciones sensibles. Pero tambi'en pueden evadirse otras t'ecnicas:
+
+\begin{description}
+
+\item[Timing attack] Se puede evitar ataques de tiempo gracias a instrucciones de SVM que enga–an el contador de tiempo del sistema operativo.
+
+\item[Blue Pill sobre Blue Pill] Virtualizando un equipo ya virtualizado podr'ia llevar a errores que detecten la presencia del rootkit. Para que eso no suceda se puede enga–ar al sistema operativo dici'endole que el procesador no soporta SVM o teniendo especial cuidado en el hypervisor a la hora de recibir instrucciones en la generaci'on de nuevas m'aquinas virtuales.
+
+\end{description}
+
 \subsubsection{SubVirt}
  
 Anteriormente un investigador de Microsoft hab'ia desarrollado un rootkit similar, el SubVirt rootkit. Sin embargo, era una versi'on mucho m'as limitada que Blue Pill. Las mayores desventajas son:
