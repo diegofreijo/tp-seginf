@@ -18,6 +18,11 @@ Especialmente en el caso de los programas maliciosos es cuando se hace indispens
 
 Lamentablemente los equipos con vitualizaci'on completa resultan p'oco 'utiles en la pr'actica debido a la gran ineficiencia de recursos que se genera y es por 'esto que la mayor'ia de las soluciones de virtualizaci'on utilizan paravirtualizaci'on. 'Este enfoque presenta modificaciones al kernell del sistema operativo guest con lo cual ya se compromete desde el inicio la transparencia de la m'aquina virtual. Por su parte, el hypervisor y las VMM no dejan de ser programas y como tales pueden contener vunerabilidades a la hora de esconder su verdadera naturaleza a los procesos corriendo dentro. Adem'as un ambiente virtualizado puede poseer una mala configuraci'on por parte de sus administradores que vulneren al sistema. As'i los creadores de c'odigos maliciosos obtienen herramientas para detectar ambientes virtualizados. Las m'as importantes se explicar'an en detalle en la secci'on correspondiente.
 
+\subsubsection{Invirtiendo el enfoque de la defensa}
+
+Dada la dificultad de esconder aquella informaci'on que advierte si el ambiente es virtualizado o no, los programas maliciosos poseen mejores herramientas para la detecci'on de 'estos y comportarse de maneras diferentes a como lo har'ian en equipos reales. As'i es como la ingenier'ia inversa que se puede realizar sobre 'estos programas puede quedar resultar in'util en varios casos. 'Esto presenta un serio desaf'io para los encargados de la protecci'on de sistemas productivos. 
+
+Pero existe otro enfoque y es el de, en lugar de hacer ver a una m'aquina virtual como f'isica, hacer ver a una m'aquina f'isica como virtual. As'i se logra que todo programa malicioso que infecta a un equipo productivo entre en un estado de paranoia constante al considerar que lo est'an analizando e intentando de desensamblar. Luego, 'este se comportar'ia ben'eficamente y nunca logre da–ar ni infectar al sistema.
 
 \subsection{VM Escape}
 
@@ -41,7 +46,7 @@ Una forma son los medios comunes brindados adrede por el software de virtualizac
 
 \item[Shares] Algunos productos tambi'en traen por defecto carpetas compartidas por cada guest y el host con el objeto de facilitar el tr'afico de archivos entre 'estos. Igual que con el clipboard, puede ser un aspecto no deseado y deber'ia deshabilitarse de ser as'i. 
 
-\item[Integraci'on] Las 'ultimas tecnolog'ias de virtualizaci'on pretenden facilitar la operatoria del usuario final y buscan obtener m'aquinas virtuales m'as integradas entre s'i y el host a mayores niveles que los mostrados anteriormente. Por ejemplo, VM Ware posee el modo Fusion que permite ejecutar las aplicaciones del guest como si corriesen en el host, brind'andole acceso a recursos sensibles como el sistema de archivos. Por supuesto, en alguntos casos son caracter'isticas deseables, pero en otros no y se debe tener cuidado a la hora de configurarlas para obtener el nivel de isolaci'on requerido.
+\item[Integraci'on de aplicaciones] Las 'ultimas tecnolog'ias de virtualizaci'on pretenden facilitar la operatoria del usuario final y buscan obtener m'aquinas virtuales m'as integradas entre s'i y el host a mayores niveles que los mostrados anteriormente. Por ejemplo, VMWare posee el modo Fusion\footnote{M'as informacion sobre VMWare Fusion: \url{http://www.vmware.com/products/fusion}} que permite ejecutar las aplicaciones del guest como si corriesen en el host, brind'andole acceso a recursos sensibles como el sistema de archivos. Por supuesto, en alguntos casos son caracter'isticas deseables, pero en otros no y se debe tener cuidado a la hora de configurarlas para obtener el nivel de isolaci'on requerido.
 
 \end{description}
 
@@ -49,7 +54,7 @@ Una forma son los medios comunes brindados adrede por el software de virtualizac
 
 Los hypervisor por lo general utiizan hubs o switches virtuales para responder a las necesidades de red de las m'aquinas virtuales. Bajo 'estos enfoques el host ser'ia un gateway entre la red virtual y las redes externas. 
 
-En las redes reales existen ataques tales como t'ecnicas para leer la informaci'on que circula en las mismas (sniffing) y hacerse pasar por otro equipo (spoofing) aprovechando la ubicaci'on de un equipo en la misma red que otro. Respecto a la primera, con un hub es trivial ya que los paquetes son enviados a todos los equipos en la misma red, y con un switch se pueden utilizar ataques de ARP Poisoning\footnote{Para m'as informaci'on: http://en.wikipedia.org/wiki/Arp\_poisoning}. Sobre la segunda, principalmente consiste en utilizaci'on de direcciones MAC de otros equipos o incluso tambi'en con ARP Poisoning\footnote{Para m'as informaci'on: http://en.wikipedia.org/wiki/Spoofing\_attack}.
+En las redes reales existen ataques tales como t'ecnicas para leer la informaci'on que circula en las mismas (sniffing) y hacerse pasar por otro equipo (spoofing) aprovechando la ubicaci'on de un equipo en la misma red que otro. Respecto a la primera, con un hub es trivial ya que los paquetes son enviados a todos los equipos en la misma red, y con un switch se pueden utilizar ataques de ARP Poisoning\footnote{M'as informaci'on sobre ARP Poisoning: \url{http://en.wikipedia.org/wiki/Arp_poisoning}}. Sobre la segunda, principalmente consiste en utilizaci'on de direcciones MAC de otros equipos o incluso tambi'en con ARP Poisoning\footnote{M'as informaci'on sobre Spoofing: \url{http://en.wikipedia.org/wiki/Spoofing_attack}}.
 
 Los hubs y switches virtuales se comportan de la misma forma que sus contrapartes f'isicas, por lo que son vulnerables a los mismos ataques. Por lo tanto si no se tiene cuidado en la configuraci'on de la red vitual una m'aquina virtual podr'ia monitorear informaci'on o hacerse pasar por otra de ellas utilizando 'este medio de comunicaci'on.
 

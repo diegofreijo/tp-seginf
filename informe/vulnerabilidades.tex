@@ -220,7 +220,8 @@ int main(int argc, char **argv)
 
 static bool MapPageAtNull()
 {
-   return mmap(NULL, PAGE_SIZE, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, 0, 0) == MAP_FAILED;
+   return mmap(NULL, PAGE_SIZE, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, 
+   0, 0) == MAP_FAILED;
 }
 
 static char Message[1024];
@@ -242,7 +243,8 @@ static bool InstallShellCode()
            "lea     ecx, Message                    \n"     // buf
            "mov     ebx, " SYM(STDOUT_FILENO) "     \n"     // fd
            "mov     eax, " SYM(__NR_write) "        \n"
-           "int     0x80                            \n"     // write(STDOUT_FILENO, Message, sizeof(Message));
+           "int     0x80                            \n"     
+             // write(STDOUT_FILENO, Message, sizeof(Message));
 
            // Now kill this process
            "mov     eax, " SYM(__NR_getpid) "       \n"
@@ -250,7 +252,8 @@ static bool InstallShellCode()
            "mov     ebx, eax                        \n"     // pid
            "mov     ecx, " SYM(SIGKILL) "           \n"     // signal
            "mov     eax, " SYM(__NR_kill) "         \n"
-           "int     0x80                            \n",    // kill(getpid(), SIGKILL);
+           "int     0x80                            \n",    
+             // kill(getpid(), SIGKILL);
            code,
            codesize);
 
@@ -316,6 +319,7 @@ Una de estas instrucciones es clts, la cual limpia el valor previo en el flag de
 
 Microsoft arreglo este bug el 15 de julio del 2009 y publicando escasa informacion del mismo en conjunto con los descubridores del error.
 
+\clearpage
 \section{Detecci'on de entorno virtualizado}
 
 En la siguiente seccion vamos a enumerar 2 de las principales formas de detectar si se esta corriendo en un entorno virtualizado. Esto es necesario en ciertos casos en los que se quiere que no se analice cierto software, como virus o malware, y se comportan de manera diferente al detectar virtualizacion. Principalmente se basan en errores u omisiones de emulacion de ciertas instrucciones no documentadas de los procesadores o tambien de algunas respuestas a instrucciones que son diferentes en entornos virtualizados, lo que da una idea cierta de esto.
