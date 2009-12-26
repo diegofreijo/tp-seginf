@@ -372,3 +372,14 @@ Aca esta un ejemplo para los diferentes softwares de virtualizacion:
 
 Otros comandos similares para verificar son dmidecode y cat /proc/ide/hd*/model.
 
+\subsection{Aplicaciones de la deteccion - Caso Storm Worm}
+
+Para ejemplificar, tomamos el caso del malware Storm Worm. Este fue detectado luego de un ataque a servidores de anti-spam en enero del 2007. Es un worm packeado con un packer hecho por el autor, que una vez ejecutado realiza ciertos chequeos. En algunas versiones del malware, uno de esos chequeos es verificar si esta corriendo en un sistema virtualizado o si un debugguer se encuentra enganchado al mismo. Si esto es correcto, el worm entra en un ciclo infinito, el cual deja inutilizable el sistema donde se lo esta probando y obliga a un reinicio del mismo. Estos chequeos los realiza para dificultar el analisis del malware y ocultar sus procedimientos.
+
+\imagen{storm-vmware.png}{14}{Codigo ASM del chequeo de VMware}
+
+Para detectar VMware por ejemplo, este malware utiliza un metodo publicado por Ken Kato (http://chitchat.at.infoseek.co.jp/vmware/backdoor.html). Este consiste en el uso de un puerto de entrada salida (0x5658 = “VX”) el cual es usado con un numero "magico" (0x564D5868 = “VMXh”). Luego de ejecutar la instruccion IN como se ve en el grafico, si el programa esta siendo ejecutado en un entorno virtualizado, en el registro EBX queda el contenido del numero magico. Si el malware esta siendo depurado, se puede cambiar el valor de EBX en el momento y esquivar ese chequeo.
+
+\imagen{storm-virtualpc.png}{14}{Codigo ASM del chequeo de VirtualPC}
+
+Por otro lado, para detectar si esta siendo ejecutado en VirtualPC, Storm Worm utiliza el metodo de Elias Bachaalany (http://www.codeproject.com/system/VmDetect.asp). Este metodo consiste en utilizar codigos de operacion de instruccion ilegales. Utiliza un manejador de excepciones al llamar a esos codigos, el cual es ejecutado cuando se corre en un entorno fisico, pero en una maquina virtual no sucede ya que VirtualPC maneja esa excepcion. El programa de chequeo se da cuenta de esto ya que el registro EBX se mantiene en 0 cuando VirtualPC esta corriendo.
