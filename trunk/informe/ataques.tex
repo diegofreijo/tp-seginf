@@ -18,11 +18,15 @@ Especialmente en el caso de los programas maliciosos es cuando se hace indispens
 
 Lamentablemente los equipos con vitualizaci'on completa resultan p'oco 'utiles en la pr'actica debido a la gran ineficiencia de recursos que se genera y es por 'esto que la mayor'ia de las soluciones de virtualizaci'on utilizan paravirtualizaci'on. 'Este enfoque presenta modificaciones al kernell del sistema operativo guest con lo cual ya se compromete desde el inicio la transparencia de la m'aquina virtual. Por su parte, el hypervisor y las VMM no dejan de ser programas y como tales pueden contener vunerabilidades a la hora de esconder su verdadera naturaleza a los procesos corriendo dentro. Adem'as un ambiente virtualizado puede poseer una mala configuraci'on por parte de sus administradores que vulneren al sistema. As'i los creadores de c'odigos maliciosos obtienen herramientas para detectar ambientes virtualizados. Las m'as importantes se explicar'an en detalle en la secci'on correspondiente.
 
+\subsubsection{Ataques de tiempo}
+
+Existen diferencias temporales en ciertas operaciones cuando se trabaja con hardware real y uno virtualizado. Por ejemplo, leer un registro PCI puede tardar cientos de ciclos en leer desde el hardware pero solo uno cuando 'este ya se encuentra en un registro del CPU. 'Estas diferencias pueden no apreciarse si se corre en un ambiente virtualizado, ya que el hypervisor genera nuevas instrucciones que pueden alterar los datos de los registros del procesador. Un programa podr'ia utilizar las diferencias esperadas para detectar un ambiente virtualizado.
+
 \subsubsection{Invirtiendo el enfoque de la defensa}
 
 Dada la dificultad de esconder aquella informaci'on que advierte si el ambiente es virtualizado o no, los programas maliciosos poseen mejores herramientas para la detecci'on de 'estos y comportarse de maneras diferentes a como lo har'ian en equipos reales. As'i es como la ingenier'ia inversa que se puede realizar sobre 'estos programas puede quedar resultar in'util en varios casos. 'Esto presenta un serio desaf'io para los encargados de la protecci'on de sistemas productivos. 
 
-Pero existe otro enfoque y es el de, en lugar de hacer ver a una m'aquina virtual como f'isica, hacer ver a una m'aquina f'isica como virtual. As'i se logra que todo programa malicioso que infecta a un equipo productivo entre en un estado de paranoia constante al considerar que lo est'an analizando e intentando de desensamblar. Luego, 'este se comportar'ia ben'eficamente y nunca logre da–ar ni infectar al sistema.
+Pero existe otro enfoque y es el de, en lugar de hacer ver a una m'aquina virtual como f'isica, hacer ver a una m'aquina f'isica como virtual. As'i se logra que todo programa malicioso que infecta a un equipo productivo entre en un estado de paranoia constante al considerar que lo est'an analizando e intentando de desensamblar. Luego, 'este se comportar'ia ben'eficamente y nunca logre da–ar ni infectar al sistema\footnote{M'as informaci'on: \url{http://www.eecs.umich.edu/?zmao/Papers/DCCS-xu-chen.pdf}}.
 
 \subsection{VM Escape}
 
