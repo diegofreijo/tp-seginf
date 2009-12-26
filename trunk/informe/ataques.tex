@@ -31,20 +31,48 @@ As'i se compromete al equipo f'isico y a todas las demas m'aquinas virtuales eje
 
 Dada la necesidad de isolaci'on ya explicada anteriormente, una m'aquina virtual (es decir, ningun proceso ejecut'andose en ella) no deber'ia poder comunicarse con las dem'as corriendo en el mismo equipo f'isico o con el host. Pero as'i como se dijo antes el hypervisor puede poseer vulnerabilidades que comprometan 'este requerimiento y brinden puertas de acceso a los programas para que monitoreen y alteren la informaci'on de ellos.
 
+\subsubsection{Medios comunes}
+
 Una forma son los medios comunes brindados adrede por el software de virtualizaci'on utilizado. Los m'as comunes son
 
 \begin{description}
 
 \item[Clipboard] Algunos productos de virtualizaci'on permiten que el host y los guests compartan el clipboard (o portapapaeles) pudiendo cada uno de ellos leer y modificar sus contenidos. En algunos casos la informaci'on que se aloje en 'este puede ser confidencial, como una contrase–a, y no deber'ia ser compartida con los dem'as equipos. Adem'as, al ser un medio donde se puede alojar cualquier tipo de informaci'on, se podr'ia llegar a utilizar como covert channel para facilitar un ataque desde una m'aquina virtual a otra (o al host). 
 
+\item[Shares] Algunos productos tambi'en traen por defecto carpetas compartidas por cada guest y el host con el objeto de facilitar el tr'afico de archivos entre 'estos. Igual que con el clipboard, puede ser un aspecto no deseado y deber'ia deshabilitarse de ser as'i. 
+
+\item[Integraci'on] Las 'ultimas tecnolog'ias de virtualizaci'on pretenden facilitar la operatoria del usuario final y buscan obtener m'aquinas virtuales m'as integradas entre s'i y el host a mayores niveles que los mostrados anteriormente. Por ejemplo, VM Ware posee el modo Fusion que permite ejecutar las aplicaciones del guest como si corriesen en el host, brind'andole acceso a recursos sensibles como el sistema de archivos. Por supuesto, en alguntos casos son caracter'isticas deseables, pero en otros no y se debe tener cuidado a la hora de configurarlas para obtener el nivel de isolaci'on requerido.
+
 \end{description}
 
-Virtual machines can be used to serve multiple needs:
+\subsubsection{Redes virtuales}
 
-? Sharing a physical computer between multiple organizations or companies
- ? Using a single physical computer for low security and high security applications 
- ? Consolidation of services onto fewer physical computers 
- ? Providing a common hardware platform to host multiple operating systems
- 
- The first three applications assume isolation exists between the virtual machines. In the first case, the companies should be able to assume that applications on the other VMs cannot access theirs. In the second and third cases, a break-in on one virtual machine should not provide access to the others. However, in the fourth case the goal of the virtualization may be to facilitate communication between multiple guests and the host (see section 6.1.2).Although the majority of security concerns associated with virtual machines are similar, if not identical, to those on physical platforms, VMs do have unique potential weaknesses. Some of these are identified below:? Technologies like a shared clipboard allow data to be transferred between VMs and the host. This useful functionality can also provide a gateway for transferring data between cooperating malicious programs in VMs of different security realms or to exfiltrate data to/from the host operating system.? In one VM technology, the operating system kernel that provides the VM layer has the ability to log keystrokes and screen updates passed across virtual terminals in the virtual machine. The
-keystrokes and screen updates are logged to files out on the host, allowing monitoring of even encrypted terminal connections inside the VM.? Some VMs do not focus on isolation at all, giving the guests unfettered access of the host's resources, such as the file system. Such solutions tend to focus on running applications designed for one operating system on another operating system, and eschew the isolation that many VM users expect. VM users with significant security and isolation needs should discuss with their vendor to determine a proper approach toward isolation.
+Los hypervisor por lo general utiizan hubs o switches virtuales para responder a las necesidades de red de las m'aquinas virtuales. Bajo 'estos enfoques el host ser'ia un gateway entre la red virtual y las redes externas. 
+
+En las redes reales existen ataques tales como t'ecnicas para leer la informaci'on que circula en las mismas (sniffing) y hacerse pasar por otro equipo (spoofing) aprovechando la ubicaci'on de un equipo en la misma red que otro. Respecto a la primera, con un hub es trivial ya que los paquetes son enviados a todos los equipos en la misma red, y con un switch se pueden utilizar ataques de ARP Poisoning\footnote{Para m'as informaci'on: http://en.wikipedia.org/wiki/Arp\_poisoning}. Sobre la segunda, principalmente consiste en utilizaci'on de direcciones MAC de otros equipos o incluso tambi'en con ARP Poisoning\footnote{Para m'as informaci'on: http://en.wikipedia.org/wiki/Spoofing\_attack}.
+
+Los hubs y switches virtuales se comportan de la misma forma que sus contrapartes f'isicas, por lo que son vulnerables a los mismos ataques. Por lo tanto si no se tiene cuidado en la configuraci'on de la red vitual una m'aquina virtual podr'ia monitorear informaci'on o hacerse pasar por otra de ellas utilizando 'este medio de comunicaci'on.
+
+\subsubsection{Monitoreo de host a guest}
+
+El hypervisor posee control total sobre las m'aquinas virtuales que ejecuta. Puede brindarle o quitarle recursos, ejecutarlas, reiniciarlas o apagarlas, etc. Pero tambi'en puede monitorear la actividad que realizan, ya sea la comunicaci'on que circula por la red virtual (como se dijo, el host hace las veces de un gateway de 'esta), los archivos que accede (junto a la informaci'on que lee y escribe de 'estos) o la memoria que utilizan {\it en caliente}, es decir, en uso.
+
+'Esto presenta un riesgo para la informaci'on encontrada dentro de las m'aquinas virtuales. Principalmente no porque el hypervisor sea malicioso y snifee 'esta con fines mal'eficos (aunque podr'ia serlo) si no por el peligro que 'este sea comprometido debido a un programa que s'i posea fines malvados, como puede ser un virus, o un usuario explotando una vulnerabilidad en 'el. 
+
+Y puede resultar en un compromiso mayor a los que suceden en ambientes no virtualizados. Debido a las t'ecnicas de memoria segmentada que presentan la mayor'ia de los sistemas operativos hoy en d'ia, es casi imposible que un proceso malicioso accese a la informaci'on que maneja en 'ese momento otro proceso; es decir, no puede leer memoria que no sea suya. Pero si el proceso malicioso vulnerase al hipervisor, encontrar'ia la gran ventaja de conseguir 'este tipo de monitoreo por sobre uno ejecut'andose en un guest.
+
+Como cualquier programa vulnerable, lo mejor es aplicarle al hypervisor los parches a la brevedad posible para evitar 'este tipo de problemas y mantener todo el sistema operativo host y la red a la cual se encuentra conectado en condiciones 'optimas para cumplir con los requerimientos de seguridad del sistema.
+
+
+\subsection{Denegaci'on de servicio}
+
+El host comparte sus recursos con las m'aquinas virtuales que ejecuta. Por ello es importante que el hypervisor asegure una utilizaci'on justa de los mismos. De no lograrlo un guest podr'ia causar una utilizaci'on masiva de cierto recurso (principalmente red, file system, memoria o procesador) y causar starvation, lo que se traduce en un ataque de denegaci'on de servicio sobre el host y las dem'as m'aquinas virtuales que 'este ejecuta.
+
+
+\subsection{Modificaci'ones al hypervisor y m'aquinas virtuales}
+
+Como ya se dijo, el hypervisor posee control absoluto sobre las m'aquinas virtuales. Si 'este se compromete y un atacante logra que ejecute c'odgo arbitrario todo 'ese control estar'ia en sus manos. Pero tambi'en se podr'ia modificar al hypervisor para se comporte de la forma que el intruso desee. Por ejemplo, favorecer a alguna m'aquina virtual en la asignaci'on de recursos, permitiendo que s'olo corran alguna de ellas, gener'andoles comportamientos err'aticos causando DoS, etc.  Por eso se debe tener gran cuidado en quien accede a su binario y librer'ias que utiliza.
+
+Pero las modificaciones tambi'en pueden realizarse al nivel de la m'aquina virtual. Lo que se comprometer'ia aqu'i ser'ian los programas e informaci'on que posee, haciendo que el atacante agregue el comportamiento que desee a 'estos o al sistema operativo guest. Nuevamente, se debe controlar el acceso a los archivos de la la m'aquina virtual.
+
+
