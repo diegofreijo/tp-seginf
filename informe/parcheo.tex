@@ -1,0 +1,18 @@
+\section{Ejemplos de aplicaci'on de parches de seguridad en tecnolog'ia VMware}
+
+En su blog, Eric Horschman, product manager en VMware, explica que, al aplicar un parche al producto ESXi, se reemplaza toda la imagen. Entonces, un parche para ESXi tiene el tama~no de un instalador para la versi'on completa de ESXi. Asegura que, sin embargo, los clientes prefieren ese enfoque porque les asegura consistencia en las instalaciones y evita ir alej'andose de una configuraci'on v'alida.
+
+Para el producto Hyper-V, comenta que usaron un enfoque basado en el estilo Windows Update. En este caso, los parches son de menor tama~no, pero los clientes pueden saltearse parches, lo que resulta en una configuarci'on insegura, parcheada parcialmente.
+
+Seg'un Horschman, lo que realmente importa es la cantidad de parches y cu'an problem'tica es su instalaci'on. En el caso de ESXi, se redujo dr'asticamente la cantidad de parches necesarios.
+
+Tanto para ESX y ESXi, reiniciar el host luego de la aplicaci'on del parche nunca fue un problema seg'un Horschman, debido a las herramientas VMotion y Maintenance Mode, que permiten cambiar f'acilmente de host a una VM.
+
+Horschman supone que debe ser extremadamente frustrante para los usuarios de Hyper-V tener que parchear y reiniciar el host (si el sistema operativo host es Windows Server 2008), cuando el parche no tiene nada que ver con virtualizaci'on. Menciona que sale un parche para Windows Server 2008 en promedio una vez por semana, y que este parche implica reiniciar el host. Estos parches no tienen relaci'on con Hyper-V, pero los usuarios, sin embargo, deben instalarlos y reiniciar. Como Hyper-V R1 no tiene soporte para `live migration', cada vez que hay que reiniciar el host esto significa tiempo ca'ido para las VMs montadas en 'el. El tiempo de baja va a ser menor con Hyper-V R2, pero la cantidad de parches no va a disminuir.
+
+\subsection{VMotion}
+
+VMotion es un componente pago que se puede adquirir para ciertas ediciones de VMware vSphere. Su funci'on principal es la de mover una VM de VMware de un server f'isico a otro server f'isico, sin p'erdida de tiempo (o sea, la VM nunca deja de funcionar para el usuario).
+
+
+Vmotion utiliza el cluster file system de VMware para controlar el acceso al almacenamiento virtual de la VM. Durante el proceso de VMotion, la memoria activa y el estado preciso de ejecuci'on de la VM a migrar son r'apidamente transmitidos por una red de alta velocidad de un server al otro. El acceso al almacenamiento virtual es instant'aneamente cambiado de un server f'sico al otro. Como la red tambi'en es virtualizada, por VMware ESX, la VM mantiene su identidad de red y sus conexiones, asegurando una migraci'on transparente.
