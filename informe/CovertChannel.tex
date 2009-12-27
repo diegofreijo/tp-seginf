@@ -1,0 +1,71 @@
+\section{Uso de Canales Encubiertos en Virtualizaci'on}
+
+\subsection{Definici'on de Canal Encubierto}
+
+Los Canales Encubiertos son entidades que, en su uso normal, no son vistas como objetos usados para transferir informaci'on de un sujeto a otro. Entonces, una entidad es usada como un Canal Encubierto cuando, a pesar de no haber sido pensada para ser un medio de comunicaci'on, es usada como tal.
+
+El objetivo, al usar un Canal Encubierto, es que la comunicaci'on deseada sea realizada en secreto. Por eso se usa una entidad no pensada para comunicar, ya que de este modo nadie sabr'a que una comunicaci'on est'a teniendo lugar.
+
+\subsection{Canal Encubierto en la VM Xen}
+
+Xen utiliza la t'ecnica de paravirtualizaci'on. Esto significa que los sistemas operativos guests conocen al hypervisor. Existe lo que se llaman "hypercalls", llamadas del SO guest al hypervisor.
+
+La memoria se distribuye de la siguiente manera:
+\begin{itemize}
+	\item Memoria virtual para el dominio de usuario dentro de la VM
+	\item Memoria "pseudo-f'isica" para el dominio del SO guest (memoria f'isica com'un para todos los SO guest)
+	\item Memoria f'isica para el hypervisor
+\end{itemize}
+
+La tabla pseudo-f'isica de memoria es la misma para todos los guests por un tema de performance (menos cambio de contexto). Algunas direcciones son utilizables para lectura: las de cada guest y las del espacio compartido. Cada guest deber'ia tener permitido escribir en su propio espacio de memoria. No hay chequeo de entrada: el guest es el 'unico responsable de administrar sus alocaciones de memoria (y sus mecanismos).
+
+La posibilidad del Canal Encubierto se da por una decisi'on de dise~no de Xen: la tabla de memoria pseudo-f'isica puede ser le'ida por un guest en casi su totalidad (se pueden leer direcciones de otros guests). Entonces, se puede usar esta tabla como Canal Encubierto.
+
+Mecanismo para el Canal Encubierto:
+\begin{itemize}
+	\item Escribir datos en una direcci'on virtual (en principio in'util salvo para el SO guest)
+	\item Hacer reconocible este dato por otro guest con un tag especial: usando un protocolo a medida para el intercambio de datos. 
+\end{itemize}
+
+Para que el protocolo tenga 'exito es necesario que los guests se conozcan inicialmente entre ellos.
+
+Para extraer datos:
+\begin{itemize}
+	\item Primera lectura: Buscar el tag del guest c'omplica en toda la tabla y guardar la direcci'on donde fue encontrado.
+	\item Siguientes veces: Usar la direcci'on anterior para volver a leer.
+\end{itemize}
+
+Implementaci'on existente en Linux:
+
+Utiliza un LKM (loadable kernel module). Ejemplo de uso:
+
+Escritura (guest 1):
+\begin{verbatim}
+dom1:~# echo msg dom1 > / dev / x enc c
+\end{verbatim}
+
+Lectura (guest 2):
+\begin{verbatim}
+dom2:~# dd count=1 i f=/dev / x enc c
+msg dom1
+0+1 records in
+0+1 records out
+9 bytes (9 B) copied , 0.000185 s , 48.6 kB/ s
+\end{verbatim}
+
+El c'odigo completo para implementar el covert channel se encuentra hosteado en http://digikod.net/public/XenCC/
+
+Desventajas de este Canal Encubierto:
+\begin{itemize}
+	\item Dise~no push/pop no permite sincronizaci'on.
+	\item Mucha memoria utilizada en vistas de la transferencia de datos.
+	\item Se necesita cuidado con el rango de direcciones en uso.
+	\item Puede no ser discreto, dependiendo del uso.
+\end{itemize}
+
+Detecci'on del Canal Encubierto:
+\begin{itemize}
+	\item No hay implementada una soluci'on p'ublica todav'ia.
+	\item Estad'isticas sobre el uso de hypercalls a la tabla pseudo-f'isica.
+	\item Buscar similitudes de acceso a la tabla por parte de m'as de un guest.
+\end{itemize}
